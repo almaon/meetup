@@ -1,0 +1,252 @@
+version: "3"
+services:
+
+  meetup-1:
+    depends_on:
+      - fluent-bit
+      - meetup-authorization-server
+      - view-postgres
+      - service-discovery
+    image: "docker.io/library/meetup-modulith:latest"
+    container_name: "meetup-1"
+    ports:
+      - 9001:9001
+      - 8001:8000
+    environment:
+      # Buildpacks environment variable to enable debug through a socket on port 8000
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - SERVER_PORT:9002
+      - spring_profiles_active=prod,demo
+      - OAUTH_ISSUER_URI=http://meetup-authorization-server:8080
+      - OAUTH_JWKS_URL=http://meetup-authorization-server:8080/oauth2/jwks
+      - keySetURI=http://meetup-authorization-server:8080/oauth2/jwks
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+#      - EVENT_STORE_CONNECTION=esdb://localhost:2113?tls=false
+      - VIEW_DB_URL=jdbc:postgresql://view-postgres:5433/meetup_view
+      - SERVICE_DISCOVERY_URL=http://service-discovery:8761/eureka #prod
+      - AUTH_CLIENT_ID=client
+      - AUTH_CLIENT_SECRET=secret
+      - AUTH_REDIRECT_URI=http://localhost:8080/oauth2/token    
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
+        
+  meetup-2:
+    depends_on:
+      - fluent-bit
+      - meetup-authorization-server
+      - view-postgres
+      - service-discovery
+    image: "docker.io/library/meetup-modulith:latest"
+    container_name: "meetup-2"
+    ports:
+      - 9002:9002
+      - 8002:8000
+    environment:
+      # Buildpacks environment variable to enable debug through a socket on port 8000
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - spring_profiles_active=prod
+      - SERVER_PORT:9002
+      - OAUTH_ISSUER_URI=http://meetup-authorization-server:8080
+      - OAUTH_JWKS_URL=http://meetup-authorization-server:8080/oauth2/jwks
+      - keySetURI=http://meetup-authorization-server:8080/oauth2/jwks  
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+#      - EVENT_STORE_CONNECTION=esdb://localhost:2113?tls=false
+      - VIEW_DB_URL=jdbc:postgresql://view-postgres:5433/meetup_view
+      - SERVICE_DISCOVERY_URL=http://service-discovery:8761/eureka
+      - AUTH_CLIENT_ID=client
+      - AUTH_CLIENT_SECRET=secret
+      - AUTH_REDIRECT_URI=http://localhost:8080/oauth2/token
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
+        
+  gateway:
+    depends_on:
+      - fluent-bit
+      - meetup-authorization-server
+      - service-discovery
+#      - meetup-redis
+    image: "docker.io/library/meetup-gateway:latest"
+    container_name: "meetup-gateway"
+    ports:
+      - 9000:9000
+      - 8000:8000
+    environment:
+      # Buildpacks environment variable to enable debug through a socket on port 8000
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - spring_profiles_active=prod
+#      - MEETUP_URL=http://meetup-1:9001 #dev
+#      - SPA_URL=http://meetup-ui:3000
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+#      - SPRING_DATA_REDIS_HOST=meetup-redis
+      - keySetURI=http://meetup-authorization-server:8080/oauth2/jwks
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
+    
+#  meetup-ui:
+#    depends_on:
+#      - fluent-bit
+#    image: "meetup-ui"
+#    container_name: "meetup-ui"
+#    ports:
+#      - 3000:3000
+##    environment:
+##      - PORT=3000
+#    logging:
+#      driver: fluentd
+#      options:
+#        fluentd-address: 127.0.0.1:24224
+        
+# Backing Services
+
+#  eventstore.db:
+#    image: eventstore/eventstore:23.10.1-bookworm-slim
+#    # use this image if you're running ARM-based proc like Apple M1
+#    # image: eventstore/eventstore:23.10.0-alpha-arm64v8
+#    environment:
+#      - EVENTSTORE_CLUSTER_SIZE=1
+#      - EVENTSTORE_RUN_PROJECTIONS=All
+#      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+#      - EVENTSTORE_EXT_TCP_PORT=1113
+#      - EVENTSTORE_HTTP_PORT=2113
+#      - EVENTSTORE_INSECURE=true
+#      - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
+#      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+#    ports:
+#      - '1113:1113'
+#      - '2113:2113'
+#    volumes:
+#      - type: volume
+#        source: eventstore-volume-data
+#        target: /var/lib/eventstore
+#      - type: volume
+#        source: eventstore-volume-logs
+#        target: /var/log/eventstore
+#    networks:
+#      - eventstore.db
+
+#  postgres:
+#    image: postgres:15.1-alpine
+#    environment:
+#      - POSTGRES_DB=postgres
+#      - POSTGRES_PASSWORD=Password12!
+#    ports:
+#      - "5432:5432"
+#    networks:
+#      - postgres
+
+#  pgadmin: # for event store
+#      image: dpage/pgadmin4
+#      container_name: pgadmin_container
+#      environment:
+#          PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+#          PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+#          PGADMIN_CONFIG_SERVER_MODE: 'False'
+#      volumes:
+#          - pgadmin:/var/lib/pgadmin
+#      ports:
+#          - "${PGADMIN_PORT:-5050}:80"
+#      networks:
+#          - postgres
+
+  view-postgres:
+    image: "postgres:15.1-alpine"
+    container_name: "view-postgres"
+    ports:
+      - 5433:5433
+    environment:
+      - PGPORT=5433
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=meetup_view
+     
+     
+  meetup-authorization-server:
+    image: "docker.io/library/meetup-authorization-server:latest"
+    container_name: "meetup-authorization-server"
+    ports:
+      - 8080:8080
+    environment:
+      - OAUTH_ISSUER_URI=http://localhost:8080
+      - OAUTH_JWKS_URL=http://localhost:8080/oauth2/jwks
+      - keySetURI=http://localhost:8080/oauth2/jwks
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - CLIENT_ID=client
+      - CLIENT_SECRET=secret
+      - REDIRECT_URI=http://localhost:3000/api/auth/callback/springAuth
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: 127.0.0.1:24224
+        
+  service-discovery:
+    image: "docker.io/library/meetup-servicediscovery:latest"
+    container_name: "meetup-servicediscovery"
+    ports:
+      - 8761:8761
+
+ # Observability
+
+  grafana:
+    image: grafana/grafana:9.3.2
+    container_name: grafana
+    depends_on:
+      - loki
+      - prometheus
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=user
+      - GF_SECURITY_ADMIN_PASSWORD=password
+    volumes:
+      - ./docker/observability/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./docker/observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./docker/observability/grafana/grafana.ini:/etc/grafana/grafana.ini
+
+  loki:
+    image: grafana/loki:2.7.1
+    container_name: loki
+    depends_on:
+      - fluent-bit
+    ports:
+      - "3100:3100"
+
+  fluent-bit:
+    image: grafana/fluent-bit-plugin-loki:2.7.1-amd64
+    container_name: fluent-bit
+    ports:
+      - "24224:24224"
+    environment:
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
+    volumes:
+      - ./docker/observability/fluent-bit/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+
+  prometheus:
+    image: prom/prometheus:v2.40.7
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  
+   
+#networks:
+#  eventstore.db:
+#    driver: bridge
+#  postgres:
+#    driver: bridge
+#
+#volumes:
+#  eventstore-volume-data:
+#  eventstore-volume-logs:
+#  postgres:
+#  pgadmin:

@@ -1,0 +1,131 @@
+version: "3"
+services:
+
+  meetup:
+    depends_on:
+      - meetup-authorization-server
+      - view-postgres
+    image: "docker.io/library/meetup-modulith:latest"
+    container_name: "meetup"
+    ports:
+      - 9001:9001
+      - 8000:8000
+    environment:
+      # Buildpacks environment variable to enable debug through a socket on port 8000
+      - BPL_DEBUG_ENABLED=true
+      - BPL_DEBUG_PORT=8000
+      - spring_profiles_active=dev,demo
+      - OAUTH_ISSUER_URI=http://meetup-authorization-server:8080
+      - OAUTH_JWKS_URL=http://meetup-authorization-server:8080/oauth2/jwks
+      - keySetURI=http://meetup-authorization-server:8080/oauth2/jwks
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+#      - EVENT_STORE_CONNECTION=esdb://localhost:2113?tls=false
+      - VIEW_DB_URL=jdbc:postgresql://view-postgres:5433/meetup_view
+      - SERVICE_DISCOVERY_URL=http://service-discovery:8761/eureka #prod
+      - AUTH_CLIENT_ID=client
+      - AUTH_CLIENT_SECRET=secret
+      - AUTH_REDIRECT_URI=http://meetup-authorization-server:8080/oauth2/token
+        
+  gateway:
+    depends_on:
+      - meetup-authorization-server
+    image: "docker.io/library/meetup-gateway:latest"
+    container_name: "meetup-gateway"
+    ports:
+      - 9000:9000
+    environment:
+      - spring_profiles_active=dev
+      - keySetURI=http://meetup-authorization-server:8080/oauth2/jwks
+    
+        
+# Backing Services
+
+#  eventstore.db:
+#    image: eventstore/eventstore:23.10.1-bookworm-slim
+#    # use this image if you're running ARM-based proc like Apple M1
+#    # image: eventstore/eventstore:23.10.0-alpha-arm64v8
+#    environment:
+#      - EVENTSTORE_CLUSTER_SIZE=1
+#      - EVENTSTORE_RUN_PROJECTIONS=All
+#      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+#      - EVENTSTORE_EXT_TCP_PORT=1113
+#      - EVENTSTORE_HTTP_PORT=2113
+#      - EVENTSTORE_INSECURE=true
+#      - EVENTSTORE_ENABLE_EXTERNAL_TCP=true
+#      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+#    ports:
+#      - '1113:1113'
+#      - '2113:2113'
+#    volumes:
+#      - type: volume
+#        source: eventstore-volume-data
+#        target: /var/lib/eventstore
+#      - type: volume
+#        source: eventstore-volume-logs
+#        target: /var/log/eventstore
+#    networks:
+#      - eventstore.db
+
+#  postgres:
+#    image: postgres:15.1-alpine
+#    environment:
+#      - POSTGRES_DB=postgres
+#      - POSTGRES_PASSWORD=Password12!
+#    ports:
+#      - "5432:5432"
+#    networks:
+#      - postgres
+
+#  pgadmin: # for event store
+#      image: dpage/pgadmin4
+#      container_name: pgadmin_container
+#      environment:
+#          PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+#          PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+#          PGADMIN_CONFIG_SERVER_MODE: 'False'
+#      volumes:
+#          - pgadmin:/var/lib/pgadmin
+#      ports:
+#          - "${PGADMIN_PORT:-5050}:80"
+#      networks:
+#          - postgres
+
+  view-postgres:
+    image: "postgres:15.1-alpine"
+    container_name: "view-postgres"
+    ports:
+      - 5433:5433
+    environment:
+      - PGPORT=5433
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=meetup_view
+     
+     
+  meetup-authorization-server:
+    image: "docker.io/library/meetup-authorization-server:latest"
+    container_name: "meetup-authorization-server"
+    ports:
+      - 8080:8080
+    environment:
+      - OAUTH_ISSUER_URI=http://localhost:8080
+      - OAUTH_JWKS_URL=http://localhost:8080/oauth2/jwks
+      - keySetURI=http://localhost:8080/oauth2/jwks
+#      - SPRING_CLOUD_CONFIG_URI=http://config-service:8888
+      - CLIENT_ID=client
+      - CLIENT_SECRET=secret
+      - REDIRECT_URI=http://localhost:3000/api/auth/callback/springAuth
+
+  
+   
+#networks:
+#  eventstore.db:
+#    driver: bridge
+#  postgres:
+#    driver: bridge
+#
+#volumes:
+#  eventstore-volume-data:
+#  eventstore-volume-logs:
+#  postgres:
+#  pgadmin:

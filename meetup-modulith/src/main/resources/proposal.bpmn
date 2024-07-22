@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_0fr9mxs" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.25.0">
+  <bpmn:process id="proposal" name="Proposal" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_0oiupsg</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="Event_0o0xyz2">
+      <bpmn:incoming>Flow_16194c8</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:receiveTask id="receiveDecision" name="receive decision" messageRef="Message_2op5ueq">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_0oiupsg</bpmn:incoming>
+      <bpmn:outgoing>Flow_0vkry7n</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="Activity_0mn2q7h" name="accept proposal" camunda:class="com.example.meetup.administration.application.adminAcceptMeetingGroupProposal.AcceptProposalDelegate">
+      <bpmn:incoming>Flow_14ysvd1</bpmn:incoming>
+      <bpmn:incoming>Flow_1astll4</bpmn:incoming>
+      <bpmn:outgoing>Flow_0rwiumh</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_13h2gkx">
+      <bpmn:incoming>Flow_0rwiumh</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0rwiumh" sourceRef="Activity_0mn2q7h" targetRef="Event_13h2gkx" />
+    <bpmn:sequenceFlow id="Flow_16194c8" sourceRef="Activity_1pzuy5g" targetRef="Event_0o0xyz2" />
+    <bpmn:exclusiveGateway id="Gateway_0hry9l6">
+      <bpmn:incoming>Flow_0vkry7n</bpmn:incoming>
+      <bpmn:outgoing>Flow_14ysvd1</bpmn:outgoing>
+      <bpmn:outgoing>Flow_199ewp4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_14ysvd1" name="accepted" sourceRef="Gateway_0hry9l6" targetRef="Activity_0mn2q7h">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == 'accept'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_199ewp4" name="rejected" sourceRef="Gateway_0hry9l6" targetRef="Activity_1pzuy5g">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == 'reject'} </bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0vkry7n" sourceRef="receiveDecision" targetRef="Gateway_0hry9l6" />
+    <bpmn:serviceTask id="Activity_1pzuy5g" name="reject proposal" camunda:class="com.example.meetup.administration.application.adminRejectMeetingGroupProposal.RejectProposalDelegate">
+      <bpmn:incoming>Flow_199ewp4</bpmn:incoming>
+      <bpmn:outgoing>Flow_16194c8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0oiupsg" sourceRef="StartEvent_1" targetRef="receiveDecision" />
+    <bpmn:boundaryEvent id="Event_1htxao4" attachedToRef="receiveDecision">
+      <bpmn:extensionElements />
+      <bpmn:outgoing>Flow_1astll4</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0n9ploh">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT10S</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_1astll4" sourceRef="Event_1htxao4" targetRef="Activity_0mn2q7h" />
+  </bpmn:process>
+  <bpmn:message id="Message_3g61bcu" name="isDone" />
+  <bpmn:message id="Message_3bjmeqs" name="eventaMsg" />
+  <bpmn:message id="Message_00cdd5e" name="eventbMsg" />
+  <bpmn:message id="Message_3suvh1d" name="comfirmUserReg" />
+  <bpmn:message id="Message_1d4ht5p" />
+  <bpmn:message id="Message_2op5ueq" name="proposal-desicion" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="proposal">
+      <bpmndi:BPMNShape id="Event_0o0xyz2_di" bpmnElement="Event_0o0xyz2">
+        <dc:Bounds x="622" y="112" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="840" y="158" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1d3vu28_di" bpmnElement="receiveDecision">
+        <dc:Bounds x="240" y="77" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0xc0tjv_di" bpmnElement="Activity_0mn2q7h">
+        <dc:Bounds x="490" y="200" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_13h2gkx_di" bpmnElement="Event_13h2gkx">
+        <dc:Bounds x="622" y="222" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0clpk2w_di" bpmnElement="Activity_1pzuy5g">
+        <dc:Bounds x="490" y="90" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="156" y="99" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="163" y="142" width="22" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0hry9l6_di" bpmnElement="Gateway_0hry9l6" isMarkerVisible="true">
+        <dc:Bounds x="375" y="105" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1htxao4_di" bpmnElement="Event_1htxao4">
+        <dc:Bounds x="262" y="139" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_16194c8_di" bpmnElement="Flow_16194c8">
+        <di:waypoint x="590" y="130" />
+        <di:waypoint x="622" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0oiupsg_di" bpmnElement="Flow_0oiupsg">
+        <di:waypoint x="192" y="117" />
+        <di:waypoint x="240" y="117" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vkry7n_di" bpmnElement="Flow_0vkry7n">
+        <di:waypoint x="340" y="130" />
+        <di:waypoint x="375" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14ysvd1_di" bpmnElement="Flow_14ysvd1">
+        <di:waypoint x="400" y="155" />
+        <di:waypoint x="400" y="230" />
+        <di:waypoint x="490" y="230" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="418" y="213" width="45" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1astll4_di" bpmnElement="Flow_1astll4">
+        <di:waypoint x="280" y="175" />
+        <di:waypoint x="280" y="240" />
+        <di:waypoint x="490" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0rwiumh_di" bpmnElement="Flow_0rwiumh">
+        <di:waypoint x="590" y="240" />
+        <di:waypoint x="622" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_199ewp4_di" bpmnElement="Flow_199ewp4">
+        <di:waypoint x="425" y="130" />
+        <di:waypoint x="490" y="130" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="430" y="142" width="40" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
